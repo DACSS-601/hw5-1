@@ -1,0 +1,151 @@
+---
+title: "Fragile States Index Analysis: Trends 2006-2023s"
+author: "Abhinav Erraguntla"
+date: "`r Sys.Date()`"
+output: html_document
+---
+
+```{r}
+library(tidyverse)
+```
+Explanation: Load tidyverse
+
+```{r}
+library(readxl)
+library(dplyr)
+```
+
+Explanation: Load packages to read Excel files and manipulate data.
+
+```{r}
+file_list <- list.files(pattern = "\\.xlsx$")
+all_data <- map_df(file_list, ~read_excel(.x) %>% mutate(Year = as.numeric(Year)))
+```
+
+Explanation: Get list of all Excel files, then read and stack them vertically into one dataframe.
+
+
+```{r}
+head(all_data)
+colnames(all_data)
+```
+
+Explanation: View first rows and see all column names.
+
+
+```{r}
+all_data <- all_data %>% select(Country, Year, Rank, Total, 
+                                 "C1: Security Apparatus", "C2: Factionalized Elites", 
+                                 "C3: Group Grievance", "E1: Economy", 
+                                 "E2: Economic Inequality", "E3: Human Flight and Brain Drain",
+                                 "P1: State Legitimacy", "P2: Public Services", 
+                                 "P3: Human Rights", "S1: Demographic Pressures", 
+                                 "S2: Refugees and IDPs", "X1: External Intervention") %>%
+  rename(C1_Security_Apparatus = "C1: Security Apparatus",
+         C2_Factionalized_Elites = "C2: Factionalized Elites",
+         C3_Group_Grievance = "C3: Group Grievance",
+         E1_Economy = "E1: Economy",
+         E2_Economic_Inequality = "E2: Economic Inequality",
+         E3_Human_Flight_and_Brain_Drain = "E3: Human Flight and Brain Drain",
+         P1_State_Legitimacy = "P1: State Legitimacy",
+         P2_Public_Services = "P2: Public Services",
+         P3_Human_Rights = "P3: Human Rights",
+         S1_Demographic_Pressures = "S1: Demographic Pressures",
+         S2_Refugees_and_IDPs = "S2: Refugees and IDPs",
+         X1_External_Intervention = "X1: External Intervention")
+```
+
+Explanation: Select only the columns you need, then rename them to use underscores instead of colons and spaces.
+
+
+
+```{r}
+all_data <- all_data %>% mutate(Rank = as.numeric(gsub("[^0-9]", "", Rank)))
+```
+Explanation: Remove all non-numeric characters from Rank (like "1st", "2nd" becomes just 1, 2) and convert to integer.
+
+```{r}
+all_data <- all_data %>% mutate(Year = as.integer(Year))
+```
+
+Explanation: Convert Year to integer type.
+
+```{r}
+head(all_data)
+str(all_data)
+```
+
+Explanation: View the cleaned data and verify all columns have correct data types.
+
+
+```{r}
+all_data <- all_data %>% mutate(Year = lubridate::year(as.POSIXct(Year, origin = "1970-01-01", tz = "UTC")))
+
+```
+
+Explanation: Convert Unix timestamps to actual years (2006-2023).
+
+
+```{r}
+head(all_data)
+unique(all_data$Year)
+```
+
+Explanation: Check that Year now shows actual years, and list all unique years in the dataset.
+
+
+
+```{r}
+all_data <- all_data %>% mutate(Year = if_else(Year == 1970, 2023, Year))
+```
+Explanation: Replace the incorrect 1970 value with 2023.
+
+
+```{r}
+unique(all_data$Year)
+write.csv(all_data, "fsi_combined_clean.csv", row.names = FALSE)
+```
+
+Explanation: Check all years are correct, then save the cleaned dataset to CSV file.
+
+
+
+```{r}
+all_data <- all_data %>% mutate(Year = as.integer(Year))
+```
+Explanation: Ensure Year is stored as integer, not double.
+
+
+```{r}
+ggplot(all_data, aes(x = factor(Year), y = Total)) +
+  geom_boxplot(fill = "steelblue") +
+  labs(title = "Distribution of Fragile States Index Total Score by Year",
+       x = "Year", y = "Total Score") +
+  theme_minimal()
+```
+Explanation: Create boxplot showing Total score distribution for each year.
+
+
+```{r}
+all_data %>% group_by(Year) %>% summarise(Mean_Total = mean(Total, na.rm = TRUE)) %>%
+  ggplot(aes(x = Year, y = Mean_Total)) + geom_line(color = "darkblue", linewidth = 1) + geom_point(color = "darkblue", size = 3) +
+  labs(title = "Average Fragile States Index Total Score Over Time", x = "Year", y = "Average Total Score") + theme_minimal()
+```
+
+Explanation: Calculate mean Total score per year, then plot as a line with points showing trend over time.
+
+
+```{r}
+all_data %>% filter(Year %in% c(2013, 2023)) %>% 
+  pivot_longer(cols = c(C1_Security_Apparatus, C2_Factionalized_Elites, C3_Group_Grievance), names_to = "Variable", values_to = "Value") %>%
+  ggplot(aes(x = Value, fill = factor(Year))) + geom_histogram(bins = 15, alpha = 0.7) +
+  facet_wrap(~Variable, scales = "free") + labs(title = "Comparison of C Indicators: 2013 vs 2023", x = "Score", y = "Frequency", fill = "Year") + theme_minimal()
+```
+
+Explanation: Filter for 2013 and 2023, reshape data to long format, create histograms with facets for each C variable, color by year.
+
+
+```{r}
+write.csv(all_data, "fsi_combined_clean.csv", row.names = FALSE)
+```
+Explanation: Save the final cleaned dataset as CSV for download and reference.
