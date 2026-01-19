@@ -18,11 +18,21 @@ library(dplyr)
 Explanation: Load packages to read Excel files and manipulate data.
 
 ```{r}
-file_list <- list.files(pattern = "\\.xlsx$")
-all_data <- map_df(file_list, ~read_excel(.x) %>% mutate(Year = as.numeric(Year)))
+github_url <- "https://raw.githubusercontent.com/DACSS-601/hw5-1/main/"
+file_names <- c("fsi-2006.xlsx", "fsi-2007.xlsx", "fsi-2008.xlsx", "fsi-2009.xlsx", 
+                "fsi-2010.xlsx", "fsi-2011.xlsx", "fsi-2012.xlsx", "fsi-2013.xlsx",
+                "fsi-2014.xlsx", "fsi-2015.xlsx", "fsi-2016.xlsx", "fsi-2017.xlsx",
+                "fsi-2018.xlsx", "fsi-2019.xlsx", "fsi-2020.xlsx", "fsi-2021.xlsx",
+                "fsi-2022-download.xlsx", "FSI-2023-DOWNLOAD%20(1).xlsx")
+all_data <- map_df(file_names, function(file) {
+  url <- paste0(github_url, file)
+  local_file <- gsub("%20", " ", file)
+  download.file(url, local_file, mode = "wb", quiet = TRUE)
+  read_excel(local_file) %>% mutate(Year = as.numeric(Year))
+})
 ```
 
-Explanation: Get list of all Excel files, then read and stack them vertically into one dataframe.
+Explanation: Read each Excel file directly from GitHub raw content URL instead of local files.
 
 
 ```{r}

@@ -374,10 +374,20 @@ display: none;
 library(dplyr)</code></pre>
 <p>Explanation: Load packages to read Excel files and manipulate
 data.</p>
-<pre class="r"><code>file_list &lt;- list.files(pattern = &quot;\\.xlsx$&quot;)
-all_data &lt;- map_df(file_list, ~read_excel(.x) %&gt;% mutate(Year = as.numeric(Year)))</code></pre>
-<p>Explanation: Get list of all Excel files, then read and stack them
-vertically into one dataframe.</p>
+<pre class="r"><code>github_url &lt;- &quot;https://raw.githubusercontent.com/DACSS-601/hw5-1/main/&quot;
+file_names &lt;- c(&quot;fsi-2006.xlsx&quot;, &quot;fsi-2007.xlsx&quot;, &quot;fsi-2008.xlsx&quot;, &quot;fsi-2009.xlsx&quot;, 
+                &quot;fsi-2010.xlsx&quot;, &quot;fsi-2011.xlsx&quot;, &quot;fsi-2012.xlsx&quot;, &quot;fsi-2013.xlsx&quot;,
+                &quot;fsi-2014.xlsx&quot;, &quot;fsi-2015.xlsx&quot;, &quot;fsi-2016.xlsx&quot;, &quot;fsi-2017.xlsx&quot;,
+                &quot;fsi-2018.xlsx&quot;, &quot;fsi-2019.xlsx&quot;, &quot;fsi-2020.xlsx&quot;, &quot;fsi-2021.xlsx&quot;,
+                &quot;fsi-2022-download.xlsx&quot;, &quot;FSI-2023-DOWNLOAD%20(1).xlsx&quot;)
+all_data &lt;- map_df(file_names, function(file) {
+  url &lt;- paste0(github_url, file)
+  local_file &lt;- gsub(&quot;%20&quot;, &quot; &quot;, file)
+  download.file(url, local_file, mode = &quot;wb&quot;, quiet = TRUE)
+  read_excel(local_file) %&gt;% mutate(Year = as.numeric(Year))
+})</code></pre>
+<p>Explanation: Read each Excel file directly from GitHub raw content
+URL instead of local files.</p>
 <pre class="r"><code>head(all_data)</code></pre>
 <pre><code>## # A tibble: 6 × 17
 ##   Country         Year Rank  Total C1: Security Apparat…¹ C2: Factionalized El…²
